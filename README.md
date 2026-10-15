@@ -126,8 +126,8 @@ Usuario pulsa "Modo Oscuro / Claro"
 ```
 src/
 ├── main.jsx                    ← Punto de entrada, monta ThemeProvider
-├── App.jsx                     ← Orquestador del dashboard
-├── App.css                     ← Sistema de diseño completo (light/dark)
+├── App.jsx                     ← Orquestador del dashboard (todas las vistas SPA)
+├── App.css                     ← Sistema de diseño completo (light/dark, navbar, footer)
 ├── index.css                   ← Reset base
 │
 ├── context/
@@ -135,15 +135,28 @@ src/
 │
 ├── hooks/
 │   ├── useLocalStorage.js      ← Custom hook: sincroniza estado con localStorage
-│   ├── useDebounce.js          ← Custom hook: retrasa valor N milisegundos
-│   ├── useStudentsReducer.js   ← Reducer + initialState para gestión de estudiantes
-│   ├── useFetch.js             ← Custom hook: fetch con AbortController (semana anterior)
-│   └── useForm.js              ← Custom hook: formularios con validación (semana anterior)
+│   ├── useDebounce.js          ← Custom hook: retrasa valor N milisegundos con cleanup
+│   ├── useStudentsReducer.js   ← Reducer + initialState: ADD, REMOVE, FILTER, SORT, HYDRATE
+│   ├── useFetch.js             ← Custom hook: fetch con AbortController y cleanup
+│   └── useForm.js              ← Custom hook: formularios con validación genérica
 │
 └── components/
-    ├── StudentForm.jsx         ← Formulario de registro (useRef, useState, useEffect)
-    └── StudentList.jsx         ← Tabla filtrada/ordenada (useMemo, useCallback, useRef)
+    ├── Navbar.jsx              ← Navegación SPA sticky (vistaActual, setVistaActual)
+    ├── PageHeader.jsx          ← Cabecera de página con título, subtítulo y badges UNCP
+    ├── StudentForm.jsx         ← Formulario (useRef auto-focus, validación tiempo real)
+    ├── StudentList.jsx         ← Tabla (useMemo, useCallback, spinner búsqueda, empty states)
+    └── Footer.jsx              ← Pie de página con hooks usados e info académica
 ```
+
+---
+
+## Vistas de la aplicación
+
+| Vista | Ruta SPA | Contenido |
+|---|---|---|
+| **Registrar** | `vistaActual === "registro"` | Hero con SVG + formulario con validación en tiempo real |
+| **Lista** | `vistaActual === "lista"` | Buscador con debounce + spinner + filtros + tabla de estudiantes |
+| **Estadísticas** | `vistaActual === "estadisticas"` | Cards resumen + tabla por curso + gráfico de barras CSS |
 
 ---
 
