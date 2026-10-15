@@ -1,9 +1,11 @@
 // StudentList — tabla de estudiantes con filtrado, ordenación y acciones.
 // useMemo: evita recalcular la lista procesada en cada render si props no cambian.
 // useCallback: estabiliza handleRemove para no romper la memoización del hijo.
-// useRef + useEffect: reenfoca el buscador visual tras agregar/eliminar estudiantes.
+// Nota: useRef/useEffect para auto-focus fue eliminado — el input objetivo era
+// readOnly y robaba el foco sin ofrecer interacción real al usuario.
+// El buscador funcional vive en App.jsx.
 
-import { useRef, useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback } from "react";
 
 /**
  * @param {{
@@ -14,8 +16,6 @@ import { useRef, useMemo, useCallback, useEffect } from "react";
  * }} props
  */
 export default function StudentList({ students, filter, sort, onRemove }) {
-  const inputRef = useRef(null);
-
   // Filtra y ordena la lista cada vez que cambian students, filter o sort
   const processedStudents = useMemo(() => {
     // 1. Filtrar por estado
@@ -47,30 +47,10 @@ export default function StudentList({ students, filter, sort, onRemove }) {
     [onRemove]
   );
 
-  // Re-enfoca el buscador visual al agregar o eliminar un estudiante
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, [students.length]);
-
   return (
     <div className="table-wrapper">
       <table className="student-table" aria-label="Lista de estudiantes">
         <thead>
-          <tr>
-            <th colSpan={5}>
-              <div className="table-search-row" style={{ padding: "0" }}>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  className="search-input-table"
-                  placeholder="Buscar estudiante..."
-                  readOnly
-                  aria-label="Campo de búsqueda de estudiantes (use el buscador principal)"
-                  style={{ cursor: "default" }}
-                />
-              </div>
-            </th>
-          </tr>
           <tr>
             <th scope="col">Nombre</th>
             <th scope="col">Curso</th>

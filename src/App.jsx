@@ -100,7 +100,12 @@ export default function App() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="dashboard" data-tema={tema}>
-      {/* Header */}
+      {/* Header
+          Nota: ThemeContext aplica body.dark/light para activar CSS custom properties.
+          data-tema aquí es informativo (no apuntado por ninguna regla en App.css),
+          pero se conserva para que herramientas de debugging y futuros selectores
+          puedan usar [data-tema] como punto de expansión. El estilo activo siempre
+          viene de body.dark / :root. */}
       <header className="dashboard-header">
         <div className="header-title">
           <span aria-hidden="true">🎓</span>
