@@ -1,15 +1,16 @@
 // Navbar.jsx — Barra de navegación principal del Dashboard
-// Consume ThemeContext vía useTema() para mostrar el botón de tema.
+// Consume ThemeContext vía useTema() para el botón de tema.
+// Recibe vistaActual y setVistaActual para navegación por vistas (SPA).
 
 import { useTema } from "../context/ThemeContext";
 
 const NAV_LINKS = [
-  { href: "#estadisticas", label: "Estadísticas" },
-  { href: "#registro",     label: "Registrar" },
-  { href: "#lista",        label: "Lista" },
+  { id: "registro",     label: "Registrar",    icon: "📝" },
+  { id: "lista",        label: "Lista",         icon: "📋" },
+  { id: "estadisticas", label: "Estadísticas",  icon: "📊" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ vistaActual, setVistaActual }) {
   const { tema, toggleTema } = useTema();
 
   return (
@@ -20,11 +21,15 @@ export default function Navbar() {
       </div>
 
       <ul className="navbar-links" role="list">
-        {NAV_LINKS.map(({ href, label }) => (
-          <li key={href}>
-            <a href={href} className="navbar-link">
-              {label}
-            </a>
+        {NAV_LINKS.map(({ id, label, icon }) => (
+          <li key={id}>
+            <button
+              className={`navbar-link${vistaActual === id ? " active" : ""}`}
+              onClick={() => setVistaActual(id)}
+              aria-current={vistaActual === id ? "page" : undefined}
+            >
+              <span aria-hidden="true">{icon}</span> {label}
+            </button>
           </li>
         ))}
       </ul>

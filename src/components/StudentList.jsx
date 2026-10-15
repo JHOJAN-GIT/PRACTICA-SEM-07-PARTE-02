@@ -1,9 +1,7 @@
-// StudentList — tabla de estudiantes con filtrado, ordenación y acciones.
+// StudentList — tabla de estudiantes con filtrado, ordenación, spinner de búsqueda
+// y estado vacío mejorado.
 // useMemo: evita recalcular la lista procesada en cada render si props no cambian.
-// useCallback: estabiliza handleRemove para no romper la memoización del hijo.
-// Nota: useRef/useEffect para auto-focus fue eliminado — el input objetivo era
-// readOnly y robaba el foco sin ofrecer interacción real al usuario.
-// El buscador funcional vive en App.jsx.
+// useCallback: estabiliza handleRemove para no forzar re-renders en filas.
 
 import { useMemo, useCallback } from "react";
 
@@ -12,10 +10,12 @@ import { useMemo, useCallback } from "react";
  *   students: Array,
  *   filter: string,
  *   sort: string,
- *   onRemove: (id: number) => void
+ *   onRemove: (id: number) => void,
+ *   isSearching: boolean,
+ *   searchTerm: string
  * }} props
  */
-export default function StudentList({ students, filter, sort, onRemove }) {
+export default function StudentList({ students, filter, sort, onRemove, isSearching, searchTerm }) {
   // Filtra y ordena la lista cada vez que cambian students, filter o sort
   const processedStudents = useMemo(() => {
     // 1. Filtrar por estado
@@ -41,14 +41,91 @@ export default function StudentList({ students, filter, sort, onRemove }) {
     });
   }, [students, filter, sort]);
 
-  // Estabiliza la función para que no fuerce re-renders innecesarios en filas
+  // Estabiliza la función para no forzar re-renders innecesarios en filas
   const handleRemove = useCallback(
     (id) => onRemove(id),
     [onRemove]
   );
 
+  // ── Contenido del tbody según estado ──────────────────────────────────
+  function renderTbody() {
+    // 1. Buscando (debounce en curso)
+    if (isSearching) {
+      return (
+        <tr className="searching-row">
+          <td colSpan={5}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
+              <div className="spinner" role="status" aria-label="Buscando"></div>
+              <span>Buscando...</span>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    // 2. Sin resultados pero había término de búsqueda
+    if (processedStudents.length === 0 && searchTerm !== "") {
+      return (
+        <tr>
+          <td colSpan={5}>
+            <div className="empty-search">
+              <span className="empty-search-icon">🔍</span>
+              <p className="empty-search-title">Sin resultados</p>
+              <p className="empty-search-sub">No se encontraron estudiantes para "{searchTerm}"</p>
+            </div>
+          </td>
+        </tr>
+      );
+    }
+
+    // 3. Lista vacía sin búsqueda activa
+    if (processedStudents.length === 0) {
+      return (
+        <tr className="empty-row">
+          <td colSpan={5}>No hay estudiantes registrados. ¡Empieza registrando uno!</td>
+        </tr>
+      );
+    }
+
+    // 4. Filas normales
+    return processedStudents.map((student) => (
+      <tr key={student.id}>
+        <td>{student.nombre}</td>
+        <td>{student.curso}</td>
+        <td>{student.nota.toFixed(1)}</td>
+        <td>
+          <span
+            className={`badge ${
+              student.estado === "aprobado" ? "badge-aprobado" : "badge-reprobado"
+            }`}
+          >
+            {student.estado}
+          </span>
+        </td>
+        <td>
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={() => handleRemove(student.id)}
+            aria-label={`Eliminar a ${student.nombre}`}
+          >
+            🗑 Eliminar
+          </button>
+        </td>
+      </tr>
+    ));
+  }
+
   return (
     <div className="table-wrapper">
+      {/* Barra de contador — solo cuando hay resultados */}
+      {processedStudents.length > 0 && (
+        <div className="table-header-bar">
+          <span className="table-counter">
+            Mostrando {processedStudents.length} de {students.length} estudiante{students.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
       <table className="student-table" aria-label="Lista de estudiantes">
         <thead>
           <tr>
@@ -60,39 +137,7 @@ export default function StudentList({ students, filter, sort, onRemove }) {
           </tr>
         </thead>
         <tbody>
-          {processedStudents.length === 0 ? (
-            <tr className="empty-row">
-              <td colSpan={5}>No hay estudiantes registrados</td>
-            </tr>
-          ) : (
-            processedStudents.map((student) => (
-              <tr key={student.id}>
-                <td>{student.nombre}</td>
-                <td>{student.curso}</td>
-                <td>{student.nota.toFixed(1)}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      student.estado === "aprobado"
-                        ? "badge-aprobado"
-                        : "badge-reprobado"
-                    }`}
-                  >
-                    {student.estado}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleRemove(student.id)}
-                    aria-label={`Eliminar a ${student.nombre}`}
-                  >
-                    🗑 Eliminar
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
+          {renderTbody()}
         </tbody>
       </table>
     </div>
