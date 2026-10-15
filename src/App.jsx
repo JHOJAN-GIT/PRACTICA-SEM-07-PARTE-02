@@ -19,13 +19,18 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useDebounce } from "./hooks/useDebounce";
 import StudentForm from "./components/StudentForm";
 import StudentList from "./components/StudentList";
+import Navbar from "./components/Navbar";
+import PageHeader from "./components/PageHeader";
+import Footer from "./components/Footer";
 
 export default function App() {
   // ── Reducer — lógica de estudiantes ─────────────────────────────────────
   const [state, dispatch] = useReducer(studentsReducer, initialState);
 
   // ── Contexto de tema ─────────────────────────────────────────────────────
-  const { tema, toggleTema } = useTema();
+  // toggleTema lo consume Navbar directamente vía useTema(); aquí solo
+  // necesitamos tema para el atributo data-tema del wrapper.
+  const { tema } = useTema();
 
   // ── Persistencia — localStorage vía custom hook ──────────────────────────
   const [savedStudents, setSavedStudents] = useLocalStorage("students-data", []);
@@ -98,101 +103,98 @@ export default function App() {
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
+  // Nota: ThemeContext aplica body.dark/light para activar CSS custom properties.
+  // data-tema en .dashboard es informativo para debugging, no apuntado por CSS.
   return (
-    <div className="dashboard" data-tema={tema}>
-      {/* Header
-          Nota: ThemeContext aplica body.dark/light para activar CSS custom properties.
-          data-tema aquí es informativo (no apuntado por ninguna regla en App.css),
-          pero se conserva para que herramientas de debugging y futuros selectores
-          puedan usar [data-tema] como punto de expansión. El estilo activo siempre
-          viene de body.dark / :root. */}
-      <header className="dashboard-header">
-        <div className="header-title">
-          <span aria-hidden="true">🎓</span>
-          <h1>Dashboard de Gestión de Estudiantes</h1>
-          <span className="subtitle">UNCP — Práctica Semana 07 Parte 2</span>
-        </div>
-        <button
-          className="btn btn-theme"
-          onClick={toggleTema}
-          aria-label="Cambiar tema"
-        >
-          {tema === "light" ? "🌙 Modo Oscuro" : "☀️ Modo Claro"}
-        </button>
-      </header>
+    <div className="app-layout" data-tema={tema}>
+      {/* Barra de navegación */}
+      <Navbar />
 
-      {/* Estadísticas */}
-      <section className="stats-grid" aria-label="Estadísticas">
-        <div className="stat-card">
-          <span className="stat-number">{stats.total}</span>
-          <span className="stat-label">Total Estudiantes</span>
-        </div>
-        <div className="stat-card stat-success">
-          <span className="stat-number">{stats.aprobados}</span>
-          <span className="stat-label">Aprobados</span>
-        </div>
-        <div className="stat-card stat-danger">
-          <span className="stat-number">{stats.reprobados}</span>
-          <span className="stat-label">Reprobados</span>
-        </div>
-        <div className="stat-card stat-accent">
-          <span className="stat-number">{stats.promedio}</span>
-          <span className="stat-label">Promedio General</span>
-        </div>
-      </section>
+      {/* Cabecera de página */}
+      <PageHeader />
 
-      {/* Formulario */}
-      <StudentForm onAdd={handleAdd} />
+      {/* Contenido principal */}
+      <main className="dashboard" id="main-content">
+        {/* Estadísticas */}
+        <section className="stats-grid" id="estadisticas" aria-label="Estadísticas generales">
+          <div className="stat-card">
+            <span className="stat-number">{stats.total}</span>
+            <span className="stat-label">Total Estudiantes</span>
+          </div>
+          <div className="stat-card stat-success">
+            <span className="stat-number">{stats.aprobados}</span>
+            <span className="stat-label">Aprobados</span>
+          </div>
+          <div className="stat-card stat-danger">
+            <span className="stat-number">{stats.reprobados}</span>
+            <span className="stat-label">Reprobados</span>
+          </div>
+          <div className="stat-card stat-accent">
+            <span className="stat-number">{stats.promedio}</span>
+            <span className="stat-label">Promedio General</span>
+          </div>
+        </section>
 
-      {/* Controles de búsqueda, filtro y orden */}
-      <section className="controls" aria-label="Controles de búsqueda y filtrado">
-        <div className="search-bar">
-          <label htmlFor="search-input">Buscar:</label>
-          <input
-            id="search-input"
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Nombre del estudiante..."
+        {/* Formulario de registro */}
+        <div id="registro">
+          <StudentForm onAdd={handleAdd} />
+        </div>
+
+        {/* Controles de búsqueda, filtro y orden */}
+        <section className="controls" aria-label="Controles de búsqueda y filtrado">
+          <div className="search-bar">
+            <label htmlFor="search-input">Buscar:</label>
+            <input
+              id="search-input"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Nombre del estudiante..."
+            />
+          </div>
+
+          <div className="filter-group">
+            <label>Filtrar:</label>
+            {["todos", "aprobado", "reprobado"].map((f) => (
+              <button
+                key={f}
+                className={`btn btn-filter ${state.filter === f ? "active" : ""}`}
+                onClick={() => handleSetFilter(f)}
+                aria-pressed={state.filter === f}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="sort-group">
+            <label htmlFor="sort-select">Ordenar:</label>
+            <select
+              id="sort-select"
+              value={state.sort}
+              onChange={(e) => handleSetSort(e.target.value)}
+            >
+              <option value="nombre-asc">Nombre A-Z</option>
+              <option value="nombre-desc">Nombre Z-A</option>
+              <option value="nota-asc">Nota ↑</option>
+              <option value="nota-desc">Nota ↓</option>
+            </select>
+          </div>
+        </section>
+
+        {/* Tabla de estudiantes */}
+        <div id="lista">
+          <StudentList
+            students={filteredStudents}
+            filter={state.filter}
+            sort={state.sort}
+            onRemove={handleRemove}
           />
         </div>
+      </main>
 
-        <div className="filter-group">
-          <label>Filtrar:</label>
-          {["todos", "aprobado", "reprobado"].map((f) => (
-            <button
-              key={f}
-              className={`btn btn-filter ${state.filter === f ? "active" : ""}`}
-              onClick={() => handleSetFilter(f)}
-              aria-pressed={state.filter === f}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        <div className="sort-group">
-          <label htmlFor="sort-select">Ordenar:</label>
-          <select
-            id="sort-select"
-            value={state.sort}
-            onChange={(e) => handleSetSort(e.target.value)}
-          >
-            <option value="nombre-asc">Nombre A-Z</option>
-            <option value="nombre-desc">Nombre Z-A</option>
-            <option value="nota-asc">Nota ↑</option>
-            <option value="nota-desc">Nota ↓</option>
-          </select>
-        </div>
-      </section>
-
-      {/* Tabla de estudiantes */}
-      <StudentList
-        students={filteredStudents}
-        filter={state.filter}
-        sort={state.sort}
-        onRemove={handleRemove}
-      />
+      {/* Pie de página */}
+      <Footer />
     </div>
   );
 }
